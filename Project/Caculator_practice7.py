@@ -1,28 +1,42 @@
 import customtkinter as ctk
-from tkinter import StringVar
 
 # --- App Config ---
 ctk.set_appearance_mode("dark")
 ctk.set_default_color_theme("dark-blue")
 
+
 class CalculatorApp(ctk.CTk):
     def __init__(self):
         super().__init__()
         self.title("Calculator")
-        self.geometry("400x750")
-        self.minsize(400, 750)
-
+        self.geometry("350x650")
+        self.maxsize(400, 750)
+        self.minsize(350,650)
         self.expression = ""
         self.is_dark_mode = True
         self.history_shown = False
 
-        self.display = StringVar()
         self.create_widgets()
         self.bind("<Key>", self.handle_keypress)
 
     def create_widgets(self):
-        self.label = ctk.CTkLabel(self, textvariable=self.display, font=('Segoe UI', 28), height=80, anchor='e')
-        self.label.pack(fill='x', padx=10, pady=(10, 0))
+        self.display_box = ctk.CTkTextbox(self, height=100, font=('Segoe UI', 36), activate_scrollbars=False)
+        self.display_box.insert("1.0", "")
+        self.display_box.configure(state="disabled")
+        self.display_box.pack(fill='x', padx=10, pady=(10, 5))
+
+        self.history_frame = ctk.CTkFrame(self, fg_color="transparent")
+        self.history_box = ctk.CTkTextbox(
+            self.history_frame,
+            height=90,
+            font=('Consolas', 20),
+            fg_color="transparent",
+            text_color="#999999",
+            activate_scrollbars=False,
+            wrap="none"
+        )
+        self.history_box.pack(fill='both', expand=True)
+        self.history_box.configure(state="disabled")
 
         self.top_row = ctk.CTkFrame(self, fg_color="transparent")
         self.top_row.pack(fill='x', pady=(5, 5))
@@ -37,10 +51,6 @@ class CalculatorApp(ctk.CTk):
 
         self.theme_btn = ctk.CTkButton(self.top_row, text="☀️ Light", command=self.flip_theme, **self.btn_style)
         self.theme_btn.pack(side='right', padx=(5, 10))
-
-        self.history_frame = ctk.CTkFrame(self)
-        self.history_box = ctk.CTkTextbox(self.history_frame, height=100, font=('Consolas', 13))
-        self.history_box.pack(fill='both', expand=True)
 
         self.frame = ctk.CTkFrame(self)
         self.frame.pack(fill='both', expand=True)
@@ -99,29 +109,39 @@ class CalculatorApp(ctk.CTk):
         if val == '-' and self.expression and self.expression[-1] in "+-×÷":
             return
         self.expression += val
-        self.display.set(self.expression)
+        self.update_display()
+
+    def update_display(self):
+        self.display_box.configure(state="normal")
+        self.display_box.delete("1.0", "end")
+        self.display_box.insert("1.0", self.expression)
+        self.display_box.configure(state="disabled")
 
     def evaluate(self):
         try:
             result = eval(self.expression.replace('÷', '/').replace('×', '*').replace('^', '**'))
             result = int(result) if result == int(result) else result
+            self.history_box.configure(state="normal")
             self.history_box.insert("end", f"{self.expression} = {result}\n")
+            self.history_box.configure(state="disabled")
             self.expression = str(result)
-            self.display.set(self.expression)
+            self.update_display()
         except ZeroDivisionError:
-            self.display.set("Can't divide by zero")
+            self.expression = "Can't divide by zero"
+            self.update_display()
             self.expression = ""
         except:
-            self.display.set("Error")
+            self.expression = "Error"
+            self.update_display()
             self.expression = ""
 
     def clear_all(self):
         self.expression = ""
-        self.display.set("")
+        self.update_display()
 
     def delete_last(self):
         self.expression = self.expression[:-1]
-        self.display.set(self.expression)
+        self.update_display()
 
     def do_square_root(self):
         try:
@@ -129,16 +149,20 @@ class CalculatorApp(ctk.CTk):
                 return
             val = eval(self.expression.replace('÷', '/').replace('×', '*').replace('^', '**'))
             if val < 0:
-                self.display.set("Invalid Input")
+                self.expression = "Invalid Input"
+                self.update_display()
                 self.expression = ""
                 return
             sqrt_val = val ** 0.5
             result = int(sqrt_val) if sqrt_val == int(sqrt_val) else sqrt_val
             self.expression = str(result)
-            self.display.set(self.expression)
+            self.update_display()
+            self.history_box.configure(state="normal")
             self.history_box.insert("end", f"√({val}) = {result}\n")
+            self.history_box.configure(state="disabled")
         except:
-            self.display.set("Error")
+            self.expression = "Error"
+            self.update_display()
             self.expression = ""
 
     def do_percentage(self):
@@ -164,16 +188,19 @@ class CalculatorApp(ctk.CTk):
 
             final = int(res) if res == int(res) else res
             self.expression = str(final)
-            self.display.set(self.expression)
+            self.update_display()
+            self.history_box.configure(state="normal")
             self.history_box.insert("end", f"{original} = {final}\n")
+            self.history_box.configure(state="disabled")
         except:
-            self.display.set("Error")
+            self.expression = "Error"
+            self.update_display()
             self.expression = ""
 
     def toggle_history_view(self):
         self.history_shown = not self.history_shown
         if self.history_shown:
-            self.history_frame.pack(fill='both', expand=False, padx=10, pady=(0, 5))
+            self.history_frame.pack(after=self.display_box, fill='both', expand=False, padx=10, pady=(5, 5))
             self.clear_history_btn.pack(side='left', padx=5)
         else:
             self.history_frame.pack_forget()
@@ -184,10 +211,21 @@ class CalculatorApp(ctk.CTk):
         mode = "dark" if self.is_dark_mode else "light"
         self.theme_btn.configure(text="☀️ Light" if mode == "dark" else "🌙 Dark")
         ctk.set_appearance_mode(mode)
+
+        if self.history_shown:
+            self.history_frame.pack_forget()
+            self.clear_history_btn.pack_forget()
+
         self.build_buttons()
 
+        if self.history_shown:
+            self.history_frame.pack(after=self.display_box, fill='both', expand=False, padx=10, pady=(5, 5))
+            self.clear_history_btn.pack(side='left', padx=5)
+
     def clear_history(self):
+        self.history_box.configure(state="normal")
         self.history_box.delete("1.0", "end")
+        self.history_box.configure(state="disabled")
 
     def handle_keypress(self, evt):
         key = evt.char
