@@ -193,12 +193,11 @@ class CalculatorApp(ctk.CTk):
                 raise ValueError("Invalid Input")
 
             sqrt_val = val ** 0.5
-            self.last_result = str(sqrt_val)
-
             rounded = round(sqrt_val, 2)
             result_display = int(rounded) if rounded == int(rounded) else rounded
-
+            self.last_result = str(result_display)
             self.expression = self.last_result
+
             self.update_display()
 
             self.history_box.configure(state="normal")
