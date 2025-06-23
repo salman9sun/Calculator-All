@@ -1,6 +1,7 @@
 import customtkinter as ctk
+import tkinter.messagebox as mbox
+import re
 
-# --- App Config ---
 ctk.set_appearance_mode("dark")
 ctk.set_default_color_theme("dark-blue")
 
@@ -11,30 +12,26 @@ class CalculatorApp(ctk.CTk):
         self.title("Calculator")
         self.geometry("350x650")
         self.maxsize(400, 750)
-        self.minsize(350,650)
+        self.minsize(350, 650)
         self.expression = ""
+        self.last_result = ""
         self.is_dark_mode = True
         self.history_shown = False
+        self.max_input_length = 100
 
         self.create_widgets()
         self.bind("<Key>", self.handle_keypress)
 
     def create_widgets(self):
-        self.display_box = ctk.CTkTextbox(self, height=100, font=('Segoe UI', 36), activate_scrollbars=False)
+        self.display_box = ctk.CTkTextbox(self, height=100, font=('Segoe UI', 36), activate_scrollbars=False, wrap="none")
         self.display_box.insert("1.0", "")
         self.display_box.configure(state="disabled")
         self.display_box.pack(fill='x', padx=10, pady=(10, 5))
+        self.display_box.bind("<Button-1>", self.copy_result_to_clipboard)
 
         self.history_frame = ctk.CTkFrame(self, fg_color="transparent")
-        self.history_box = ctk.CTkTextbox(
-            self.history_frame,
-            height=90,
-            font=('Consolas', 20),
-            fg_color="transparent",
-            text_color="#999999",
-            activate_scrollbars=False,
-            wrap="none"
-        )
+        self.history_box = ctk.CTkTextbox(self.history_frame, height=90, font=('Consolas', 20), fg_color="transparent",
+                                          text_color="#999999", activate_scrollbars=False, wrap="none")
         self.history_box.pack(fill='both', expand=True)
         self.history_box.configure(state="disabled")
 
@@ -86,7 +83,7 @@ class CalculatorApp(ctk.CTk):
             ('7', lambda: self.press_key('7')), ('8', lambda: self.press_key('8')), ('9', lambda: self.press_key('9')), ('×', lambda: self.press_key('×')),
             ('4', lambda: self.press_key('4')), ('5', lambda: self.press_key('5')), ('6', lambda: self.press_key('6')), ('-', lambda: self.press_key('-')),
             ('1', lambda: self.press_key('1')), ('2', lambda: self.press_key('2')), ('3', lambda: self.press_key('3')), ('+', lambda: self.press_key('+')),
-            ('00', lambda: self.press_key('00')), ('0', lambda: self.press_key('0')), ('.', lambda: self.press_key('.')), ('=', self.evaluate),
+            ('ANS', self.insert_ans), ('0', lambda: self.press_key('0')), ('.', lambda: self.press_key('.')), ('=', self.evaluate),
         ]
 
         for idx, (txt, cmd) in enumerate(buttons):
@@ -103,34 +100,66 @@ class CalculatorApp(ctk.CTk):
             colors = get_color_settings(btn.cget("text"))
             btn.configure(**colors)
 
-    def press_key(self, val):
-        if val in "+×÷" and (not self.expression or self.expression[-1] in "+-×÷"):
-            return
-        if val == '-' and self.expression and self.expression[-1] in "+-×÷":
-            return
-        self.expression += val
-        self.update_display()
+    def get_display_font_size(self):
+        length = len(self.expression)
+        if length <= 10:
+            return ('Segoe UI', 36)
+        elif length <= 20:
+            return ('Segoe UI', 28)
+        elif length <= 30:
+            return ('Segoe UI', 22)
+        else:
+            return ('Segoe UI', 16)
 
     def update_display(self):
         self.display_box.configure(state="normal")
         self.display_box.delete("1.0", "end")
         self.display_box.insert("1.0", self.expression)
+        self.display_box.configure(font=self.get_display_font_size())
         self.display_box.configure(state="disabled")
+
+    def press_key(self, val):
+        if len(self.expression) >= self.max_input_length:
+            mbox.showwarning("Limit", "Maximum input length reached!")
+            return
+
+        operators = "+-×÷^"
+        if val in operators:
+            if not self.expression:
+                return
+            if self.expression[-1] in operators:
+                self.expression = self.expression[:-1]
+            self.expression += val
+            self.update_display()
+            return
+
+        self.expression += val
+        self.update_display()
 
     def evaluate(self):
         try:
-            result = eval(self.expression.replace('÷', '/').replace('×', '*').replace('^', '**'))
-            result = int(result) if result == int(result) else result
+            expr = self.expression.replace('÷', '/').replace('×', '*').replace('^', '**')
+            if self.last_result:
+                expr = expr.replace('ANS', self.last_result)
+
+            expr = re.sub(r'\b0+(\d)', r'\1', expr)
+
+            result = eval(expr)
+            self.last_result = str(result)
+            rounded = round(result, 2)
+            result_display = int(rounded) if rounded == int(rounded) else rounded
+
             self.history_box.configure(state="normal")
-            self.history_box.insert("end", f"{self.expression} = {result}\n")
+            self.history_box.insert("end", f"{self.expression} = {result_display}\n")
             self.history_box.configure(state="disabled")
-            self.expression = str(result)
+
+            self.expression = str(result_display)
             self.update_display()
         except ZeroDivisionError:
             self.expression = "Can't divide by zero"
             self.update_display()
             self.expression = ""
-        except:
+        except Exception:
             self.expression = "Error"
             self.update_display()
             self.expression = ""
@@ -147,19 +176,26 @@ class CalculatorApp(ctk.CTk):
         try:
             if not self.expression:
                 return
-            val = eval(self.expression.replace('÷', '/').replace('×', '*').replace('^', '**'))
+            expr = self.expression.replace('÷', '/').replace('×', '*').replace('^', '**')
+            if self.last_result:
+                expr = expr.replace('ANS', self.last_result)
+            val = eval(expr)
             if val < 0:
-                self.expression = "Invalid Input"
-                self.update_display()
-                self.expression = ""
-                return
+                raise ValueError("Invalid Input")
+
             sqrt_val = val ** 0.5
-            result = int(sqrt_val) if sqrt_val == int(sqrt_val) else sqrt_val
-            self.expression = str(result)
+            self.last_result = str(sqrt_val)
+
+            rounded = round(sqrt_val, 2)
+            result_display = int(rounded) if rounded == int(rounded) else rounded
+
+            self.expression = self.last_result  # Use full-precision internally
             self.update_display()
+
             self.history_box.configure(state="normal")
-            self.history_box.insert("end", f"√({val}) = {result}\n")
+            self.history_box.insert("end", f"√({val}) = {result_display}\n")
             self.history_box.configure(state="disabled")
+
         except:
             self.expression = "Error"
             self.update_display()
@@ -169,24 +205,28 @@ class CalculatorApp(ctk.CTk):
         try:
             if not self.expression:
                 return
+            expr = self.expression.replace('×', '*').replace('÷', '/').replace('^', '**')
+            if self.last_result:
+                expr = expr.replace('ANS', self.last_result)
             original = self.expression + '%'
-            for op in "+-×÷":
-                if op in self.expression:
-                    parts = self.expression.split(op)
+            for op in "+-*/":
+                if op in expr:
+                    parts = expr.rsplit(op, 1)
                     if len(parts) == 2:
-                        left, right = map(float, parts)
-                        right = left * right / 100
+                        left = float(parts[0])
+                        right = float(parts[1])
                         res = {
-                            '+': left + right,
-                            '-': left - right,
-                            '×': left * right,
-                            '÷': left / right if right != 0 else float('inf')
-                        }.get(op)
+                            '+': left + (left * right / 100),
+                            '-': left - (left * right / 100),
+                            '*': left * (right / 100),
+                            '/': left / (right / 100) if right != 0 else float('inf')
+                        }[op]
                         break
             else:
-                res = float(self.expression) / 100
-
-            final = int(res) if res == int(res) else res
+                res = float(expr) / 100
+            self.last_result = str(res)
+            final = round(res, 2)
+            final = int(final) if final == int(final) else final
             self.expression = str(final)
             self.update_display()
             self.history_box.configure(state="normal")
@@ -227,12 +267,18 @@ class CalculatorApp(ctk.CTk):
         self.history_box.delete("1.0", "end")
         self.history_box.configure(state="disabled")
 
+    def insert_ans(self):
+        if self.last_result:
+            self.press_key(self.last_result)
+
     def handle_keypress(self, evt):
         key = evt.char
         sym = evt.keysym
 
         if key in '0123456789.+-*/()':
             self.press_key(key.replace('*', '×').replace('/', '÷'))
+        elif key.lower() == 'a':
+            self.press_key("ANS")
         elif key == '\r':
             self.evaluate()
         elif sym == 'BackSpace':
@@ -247,6 +293,11 @@ class CalculatorApp(ctk.CTk):
             self.do_square_root()
         elif sym.lower() == 't':
             self.flip_theme()
+
+    def copy_result_to_clipboard(self, event):
+        self.clipboard_clear()
+        self.clipboard_append(self.expression)
+        self.update()
 
 
 if __name__ == "__main__":
