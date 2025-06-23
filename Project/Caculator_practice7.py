@@ -1,6 +1,7 @@
 import customtkinter as ctk
 import tkinter.messagebox as mbox
 import re
+import os
 
 ctk.set_appearance_mode("dark")
 ctk.set_default_color_theme("dark-blue")
@@ -9,10 +10,19 @@ ctk.set_default_color_theme("dark-blue")
 class CalculatorApp(ctk.CTk):
     def __init__(self):
         super().__init__()
+
+        # ✅ Set full path to icon file
+        icon_path = r"C:\Users\Salman\Documents\5th Semester Project\Me Practice\Python\calcu.ico"
+        if os.path.exists(icon_path):
+            self.iconbitmap(icon_path)
+        else:
+            print("Icon file not found:", icon_path)
+
         self.title("Calculator")
         self.geometry("350x650")
         self.maxsize(400, 750)
         self.minsize(350, 650)
+
         self.expression = ""
         self.last_result = ""
         self.is_dark_mode = True
@@ -21,7 +31,6 @@ class CalculatorApp(ctk.CTk):
 
         self.create_widgets()
         self.bind("<Key>", self.handle_keypress)
-
     def create_widgets(self):
         self.display_box = ctk.CTkTextbox(self, height=100, font=('Segoe UI', 36), activate_scrollbars=False, wrap="none")
         self.display_box.insert("1.0", "")
