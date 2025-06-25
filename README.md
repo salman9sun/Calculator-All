@@ -46,7 +46,7 @@ cd customtkinter-calculator
 Simply run the main Python file:
 
 ```bash
-python calculator.py
+Calculator7.py
 ```
 
 If you're using an icon (`calcu.ico`), ensure the path is correct or update it in the script.
