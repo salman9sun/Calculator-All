@@ -93,3 +93,63 @@ If you're using an icon (`calcu.ico`), ensure the path is correct or update it i
 ### 👤 Author
 
 **Salman Farsi**
+
+# 🧮 CustomTkinter Calculator
+
+A modern and customizable calculator app built using **Python** and **CustomTkinter**.  
+It supports:
+
+- ✅ Light & dark themes  
+- ✅ Calculation history  
+- ✅ Keyboard input support  
+- ✅ Advanced operations: square root, exponentiation, percentage, and more
+
+![calculator-preview](https://via.placeholder.com/800x400?text=Calculator+Screenshot) <!-- Replace with real image -->
+
+---
+
+## 📥 Download
+
+[![Download Calculator](https://img.shields.io/badge/Download-.exe-blue?style=for-the-badge&logo=windows)](https://github.com/yourusername/your-repo-name/releases)
+
+> 🔗 Click the badge above to download the latest `.exe` version — no Python required!
+
+---
+
+## 🔧 How to Create `.exe` File
+
+You can turn the calculator script into a Windows `.exe` file using **PyInstaller**.
+
+### ✅ Requirements
+
+- Python installed (`python --version`)
+- Pip installed (`pip --version`)
+- `calculator.py` file (this script)
+- Optional: a `.ico` icon (`calcu.ico`) for branding
+
+### 🚀 Steps
+
+1. **Install PyInstaller**:
+   ```bash
+   pip install pyinstaller
+## 🏗️ Build the `.exe` File
+
+You can convert the Python script into a standalone `.exe` using **PyInstaller**.
+
+### 📁 Navigate to the Project Folder
+
+```bash
+cd "C:\Path\To\Your\Calculator"
+⚙️ Create the .exe File
+```bash
+pyinstaller --noconsole --onefile --icon=calcu.ico calculator.py
+Option	Meaning
+--noconsole	Hide the terminal window (for GUI apps)
+--onefile	Pack everything into one .exe file
+--icon=...	Add a custom icon (optional)
+
+📂 Find the Output
+Your final .exe will be located in the dist/ folder:
+
+```bash
+dist/calculator.exe
