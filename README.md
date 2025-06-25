@@ -84,27 +84,7 @@ If you're using an icon (`calcu.ico`), ensure the path is correct or update it i
 - No complex number support  
 - Expression parser relies on `eval()` (safe due to sanitization, but still basic)  
 
-## 🤝 Contributing
 
-Feel free to fork the project and submit pull requests! Suggestions and improvements are welcome.
-
-1. Fork this repo  
-2. Create your feature branch: `git checkout -b feature/YourFeature`  
-3. Commit your changes: `git commit -m "Add YourFeature"`  
-4. Push to the branch: `git push origin feature/YourFeature`  
-5. Open a pull request  
-
-## 📄 License
-
-MIT License. See [LICENSE](LICENSE) for more information.
-
-## 🙌 Acknowledgements
-
-- [freeCodeCamp](https://www.youtube.com/c/Freecodecamp)  
-- [Tech With Tim](https://www.youtube.com/@TechWithTim)  
-- [Automate the Boring Stuff with Python](https://automatetheboringstuff.com)  
-
----
 
 > 🔎 **Tip:** Start small, test often, and add features gradually!
 
